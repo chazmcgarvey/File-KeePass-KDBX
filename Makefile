@@ -6,18 +6,18 @@ COVER   = cover
 DZIL    = dzil
 PROVE   = prove
 
-.PHONY: all bootstrap clean cover dist test
+cpanm_env = AUTHOR_TESTING=0 RELEASE_TESTING=0
 
 all: dist
 
 bootstrap:
-	$(CPANM) Dist::Zilla
-	$(DZIL) authordeps --missing |$(CPANM) -nq
-	$(DZIL) listdeps --develop --missing |$(CPANM) -nq
+
+	$(cpanm_env) $(CPANM) -nq Dist::Zilla
+	$(DZIL) authordeps --missing |$(cpanm_env) $(CPANM) -nq
+	$(DZIL) listdeps --develop --missing |$(cpanm_env) $(CPANM) -nq
 
 clean:
 	$(DZIL) $@
-	$(RM) -r .smoke
 
 cover:
 	$(COVER) -test
@@ -28,3 +28,4 @@ dist:
 test:
 	$(PROVE) -l $(if $(V),-vj1)
 
+.PHONY: all bootstrap clean cover dist test
