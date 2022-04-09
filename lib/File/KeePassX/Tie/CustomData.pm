@@ -1,5 +1,5 @@
 package File::KeePassX::Tie::CustomData;
-# ABSTRACT: INTERNAL ONLY, nothing to see here
+# ABSTRACT: Database custom data
 
 use warnings;
 use strict;

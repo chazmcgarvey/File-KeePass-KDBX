@@ -25,7 +25,10 @@ cover:
 dist:
 	$(DZIL) build
 
+distclean: clean
+	$(RM) -r cover_db
+
 test:
 	$(PROVE) -l $(if $(V),-vj1)
 
-.PHONY: all bootstrap clean cover dist test
+.PHONY: all bootstrap clean cover dist distclean test

@@ -1,8 +1,10 @@
 package File::KeePassX::Tie::EntryList;
-# ABSTRACT: INTERNAL ONLY, nothing to see here
+# ABSTRACT: Database entry list
 
 use warnings;
 use strict;
+
+use File::KDBX::Loader::KDB;
 
 use parent 'Tie::Array';
 
@@ -18,19 +20,41 @@ sub TIEARRAY {
 sub FETCH {
     my ($self, $index) = @_;
     my ($thing, $method, $k) = @$self;
-    my $entry = ($thing->$method || [])->[$index] or return;
-    return $k->_tie('File::KeePassX::Tie::Entry', $k->kdbx->_entry($entry));
+    my $entry = $thing->$method->[$index] or return;
+    return $k->_tie({}, 'Entry', $k->kdbx->_entry($entry));
 }
 
 sub FETCHSIZE {
     my ($self) = @_;
     my ($thing, $method) = @$self;
-    return scalar @{$thing->$method || []};
+    return scalar @{$thing->$method};
 }
 
-# sub STORE { ... }       # mandatory if elements writeable
-# sub STORESIZE { ... }   # mandatory if elements can be added/deleted
-# sub EXISTS { ... }      # mandatory if exists() expected to work
-# sub DELETE { ... }      # mandatory if delete() expected to work
+sub STORE {
+    my ($self, $index, $value) = @_;
+    my ($thing, $method, $k) = @$self;
+    my %info = %$value;
+    %$value = ();
+    my $entry_info = File::KDBX::Loader::KDB::_convert_keepass_to_kdbx_entry(\%info);
+    return $self->_tie($value, 'Entry', $thing->$method->[$index] = $k->kdbx->_entry($entry_info));
+}
+
+sub STORESIZE {
+    my ($self, $count) = @_;
+    my ($thing, $method) = @$self;
+    splice @{$thing->$method}, $count;
+}
+
+sub EXISTS {
+    my ($self, $index) = @_;
+    my ($thing, $method) = @$self;
+    return exists $thing->$method->[$index];
+}
+
+sub DELETE {
+    my ($self, $index) = @_;
+    my ($thing, $method) = @$self;
+    delete $thing->$method->[$index];
+}
 
 1;

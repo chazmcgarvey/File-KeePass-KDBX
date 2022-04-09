@@ -1,5 +1,5 @@
 package File::KeePassX::Tie::Protected;
-# ABSTRACT: INTERNAL ONLY, nothing to see here
+# ABSTRACT: Entry memory protection flags
 
 use warnings;
 use strict;

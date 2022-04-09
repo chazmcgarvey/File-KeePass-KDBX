@@ -71,7 +71,7 @@ is($dump4, $dump5, "Export v2/import v2 is fine");
 is($obj2_1->header->{'version'}, 2, 'Correct version 2');
 is($obj2_2->header->{'version'}, 2, 'Correct version 2 of re-import');
 
-print  "# v2 -> v1\n";
+print "# v2 -> v1\n";
 $ok = eval { $obj1_1->parse_db($obj2_2->gen_db($pass, {version => 1}), $pass, {auto_lock => 0}) };
 ok($ok, "Gen and parse a db") or diag "Error: $@";
 my $dump6 = "\n".eval { $obj1_1->dump_groups };

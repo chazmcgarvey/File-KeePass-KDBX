@@ -1,5 +1,5 @@
 package File::KeePassX::Tie::Association;
-# ABSTRACT: INTERNAL ONLY, nothing to see here
+# ABSTRACT: Auto-type window association
 
 use warnings;
 use strict;

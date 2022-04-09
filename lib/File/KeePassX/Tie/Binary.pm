@@ -1,5 +1,5 @@
 package File::KeePassX::Tie::Binary;
-# ABSTRACT: INTERNAL ONLY, nothing to see here
+# ABSTRACT: Entry binary
 
 use warnings;
 use strict;

@@ -1,5 +1,5 @@
 package File::KeePassX::Tie::Hash;
-# ABSTRACT: INTERNAL ONLY, nothing to see here
+# ABSTRACT: Hash base class
 
 use warnings;
 use strict;
@@ -57,6 +57,7 @@ sub STORE {
 }
 
 1;
+__END__
 
 =for Pod::Coverage getters setters keys default_getter default_setter
 

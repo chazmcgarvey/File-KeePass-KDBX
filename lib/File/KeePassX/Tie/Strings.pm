@@ -1,5 +1,5 @@
 package File::KeePassX::Tie::Strings;
-# ABSTRACT: INTERNAL ONLY, nothing to see here
+# ABSTRACT: Entry strings
 
 use warnings;
 use strict;

@@ -12,7 +12,8 @@ use File::KDBX::Constants qw(:header :magic :version);
 use File::KDBX::Loader::KDB;
 use File::KDBX::Util qw(generate_uuid load_optional);
 use Module::Load;
-use Scalar::Util qw(blessed refaddr weaken);
+use Scalar::Util qw(blessed looks_like_number refaddr weaken);
+use boolean;
 use namespace::clean;
 
 our $VERSION = '999.999'; # VERSION
@@ -80,22 +81,15 @@ sub clone {
 
 sub STORABLE_freeze {
     my $self = shift;
-
-    my $copy = {};
-    my $kdbx = $KDBX{refaddr($self)};
-    $kdbx = $kdbx->clone if $kdbx;
-
-    return '', $copy, ($kdbx ? $kdbx : ());
+    return '', $KDBX{refaddr($self)};
 }
 
 sub STORABLE_thaw {
     my $self    = shift;
     my $cloning = shift;
     my $empty   = shift;
-    my $clone   = shift;
     my $kdbx    = shift;
 
-    @$self{keys %$clone} = values %$clone;
     $self->kdbx($kdbx) if $kdbx;
 }
 
@@ -348,7 +342,7 @@ See L<File::KeePass/header>.
 sub header {
     my $self = shift;
     return if !exists $KDBX{refaddr($self)};
-    $self->{header} //= $self->_tie('File::KeePassX::Tie::Header', $self->kdbx);
+    $self->{header} //= $self->_tie({}, 'Header', $self->kdbx);
 }
 
 =method groups
@@ -363,7 +357,7 @@ in a shape compatible with L<File::KeePass/groups>.
 sub groups {
     my $self = shift;
     return if !exists $KDBX{refaddr($self)};
-    $self->{groups} //= $self->_tie('File::KeePassX::Tie::GroupList', $self->kdbx);
+    $self->{groups} //= $self->_tie([], 'GroupList', $self->kdbx);
 }
 
 =method dump_groups
@@ -412,7 +406,7 @@ sub add_group {
 
     my $group_info = File::KDBX::Loader::KDB::_convert_keepass_to_kdbx_group($group);
     my $group_obj = $self->kdbx->add_group($group_info, parent => $parent);
-    return $self->_tie('File::KeePassX::Tie::Group', $group_obj);
+    return $self->_tie({}, 'Group', $group_obj);
 }
 
 =method find_groups
@@ -510,8 +504,11 @@ sub add_entry {
     $entry->{expires} //= $self->default_exp;
 
     my $entry_info = File::KDBX::Loader::KDB::_convert_keepass_to_kdbx_entry($entry);
+    if (!$parent && $self->kdbx->_is_implicit_root) {
+        $parent = $self->kdbx->root->groups->[0];
+    }
     my $entry_obj = $self->kdbx->add_entry($entry_info, parent => $parent);
-    return $self->_tie('File::KeePassX::Tie::Entry', $entry_obj);
+    return $self->_tie({}, 'Entry', $entry_obj);
 }
 
 =method find_entries
@@ -729,44 +726,54 @@ sub locked_entry_password {
 
 sub _tie {
     my $self    = shift;
+    my $ref     = shift // \my %h;
     my $class   = shift;
+    my $obj     = shift;
+
+    my $cache = $TIED{refaddr($self)} //= {};
+
+    $class = __PACKAGE__."::Tie::$class" if $class !~ s/^\+//;
+    my $key = "$class:" . refaddr($obj);
+    my $hit = $cache->{$key};
+    return $hit if defined $hit;
+
     load $class;
-    return $self->_tie_array($class, @_) if $class =~ /List$/;
-    return $self->_tie_hash($class, @_);
-}
-
-sub _tie_hash {
-    my $self    = shift;
-    my $class   = shift;
-    my $obj     = shift;
-
-    my $cache = $TIED{refaddr($self)} //= {};
-
-    my $key = "$class:" . refaddr($obj);
-    my $hit = $cache->{$key};
-    return $hit if defined $hit;
-
-    tie(my %h, $class, $obj, @_, $self);
-    $hit = $cache->{$key} = \%h;
+    tie((ref $ref eq 'ARRAY' ? @$ref : %$ref), $class, $obj, @_, $self);
+    $hit = $cache->{$key} = $ref;
     weaken $cache->{$key};
     return $hit;
 }
 
-sub _tie_array {
-    my $self    = shift;
-    my $class   = shift;
-    my $obj     = shift;
+### convert datetime from KDBX to KeePass format
+sub _decode_datetime {
+    local $_ = shift or return;
+    return $_->strftime('%Y-%m-%d %H:%M:%S');
+}
 
-    my $cache = $TIED{refaddr($self)} //= {};
+### convert datetime from KeePass to KDBX format
+sub _encode_datetime {
+    local $_ = shift or return;
+    return Time::Piece->strptime($_, '%Y-%m-%d %H:%M:%S');
+}
 
-    my $key = "$class:" . refaddr($obj);
-    my $hit = $cache->{$key};
-    return $hit if defined $hit;
+### convert UUID from KeePass to KDBX format
+sub _encode_uuid {
+    local $_ = shift // return;
+    # Group IDs in KDB files are 32-bit integers
+    return sprintf('%016x', $_) if length($_) != 16 && looks_like_number($_);
+    return $_;
+}
 
-    tie(my @a, $class, $obj, @_, $self);
-    $hit = $cache->{$key} = \@a;
-    weaken $cache->{$key};
-    return $hit;
+### convert tristate from KDBX to KeePass format
+sub _decode_tristate {
+    local $_ = shift // return;
+    return $_ ? 1 : 0;
+}
+
+### convert tristate from KeePass to KDBX format
+sub _encode_tristate {
+    local $_ = shift // return;
+    return boolean($_);
 }
 
 1;

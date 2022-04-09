@@ -1,5 +1,5 @@
 package File::KeePassX::Tie::CustomIcons;
-# ABSTRACT: INTERNAL ONLY, nothing to see here
+# ABSTRACT: Database custom icons
 
 use warnings;
 use strict;

@@ -1,5 +1,5 @@
 package File::KeePassX::Tie::AssociationList;
-# ABSTRACT: INTERNAL ONLY, nothing to see here
+# ABSTRACT: Auto-type window association list
 
 use warnings;
 use strict;
@@ -17,7 +17,7 @@ sub FETCH {
     my ($self, $index) = @_;
     my ($entry, $k) = @$self;
     my $association = $entry->auto_type->{associations}[$index] or return;
-    return $k->_tie('File::KeePassX::Tie::Association', $association);
+    return $k->_tie({}, 'Association', $association);
 }
 
 sub FETCHSIZE {
@@ -26,9 +26,34 @@ sub FETCHSIZE {
     return scalar @{$entry->auto_type->{associations} || []};
 }
 
-# sub STORE { ... }       # mandatory if elements writeable
-# sub STORESIZE { ... }   # mandatory if elements can be added/deleted
-# sub EXISTS { ... }      # mandatory if exists() expected to work
-# sub DELETE { ... }      # mandatory if delete() expected to work
+sub STORE {
+    my ($self, $index, $value) = @_;
+    my ($entry) = @$self;
+    my %info = %$value;
+    %$value = ();
+    my $association = $entry->auto_type->{associations}[$index] = {
+        window              => $info{window},
+        keystroke_sequence  => $info{keys},
+    };
+    return $self->_tie($value, 'Association', $association);
+}
+
+sub STORESIZE {
+    my ($self, $count) = @_;
+    my ($entry) = @$self;
+    splice @{$entry->auto_type->{associations}}, $count;
+}
+
+sub EXISTS {
+    my ($self, $index) = @_;
+    my ($entry) = @$self;
+    return exists $entry->auto_type->{associations}[$index];
+}
+
+sub DELETE {
+    my ($self, $index) = @_;
+    my ($entry) = @$self;
+    delete $entry->auto_type->{associations}[$index];
+}
 
 1;
