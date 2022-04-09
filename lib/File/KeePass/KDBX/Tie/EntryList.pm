@@ -1,5 +1,5 @@
-package File::KeePassX::Tie::GroupList;
-# ABSTRACT: Database group list
+package File::KeePass::KDBX::Tie::EntryList;
+# ABSTRACT: Database entry list
 
 use warnings;
 use strict;
@@ -13,15 +13,15 @@ our $VERSION = '999.999'; # VERSION
 sub TIEARRAY {
     my $class = shift;
     my $self = bless [@_], $class;
-    splice(@$self, 1, 0, '_kpx_groups') if @$self == 2;
+    splice(@$self, 1, 0, 'entries') if @$self == 2;
     return $self;
 }
 
 sub FETCH {
     my ($self, $index) = @_;
     my ($thing, $method, $k) = @$self;
-    my $group = $thing->$method->[$index] or return;
-    return $k->_tie({}, 'Group', $k->kdbx->_group($group));
+    my $entry = $thing->$method->[$index] or return;
+    return $k->_tie({}, 'Entry', $k->kdbx->_entry($entry));
 }
 
 sub FETCHSIZE {
@@ -35,8 +35,8 @@ sub STORE {
     my ($thing, $method, $k) = @$self;
     my %info = %$value;
     %$value = ();
-    my $group_info = File::KDBX::Loader::KDB::_convert_keepass_to_kdbx_group(\%info);
-    return $self->_tie($value, 'Group', $thing->$method->[$index] = $k->kdbx->_group($group_info));
+    my $entry_info = File::KDBX::Loader::KDB::_convert_keepass_to_kdbx_entry(\%info);
+    return $self->_tie($value, 'Entry', $thing->$method->[$index] = $k->kdbx->_entry($entry_info));
 }
 
 sub STORESIZE {

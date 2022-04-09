@@ -1,4 +1,4 @@
-package File::KeePassX::Tie::AssociationList;
+package File::KeePass::KDBX::Tie::AssociationList;
 # ABSTRACT: Auto-type window association list
 
 use warnings;

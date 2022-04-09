@@ -1,12 +1,12 @@
 #!/usr/bin/env perl
 
-# This is copied nearly verbatim from the File::KeePass distribution to test that File::KeePassX passes the
-# same tests.
+# This is copied nearly verbatim from the File::KeePass distribution to test that File::KeePass::KDBX passes
+# the same tests.
 
 use strict;
 use warnings;
 
-use File::KeePassX;
+use File::KeePass::KDBX;
 use Test::More;
 
 eval { require File::KeePass } or plan skip_all => 'File::KeePass required to test KDB conversions';
@@ -14,10 +14,10 @@ eval { require File::KeePass } or plan skip_all => 'File::KeePass required to te
 my $pass = "foo";
 my $ok;
 
-my $obj1_1 = File::KeePassX->new;
-my $obj1_2 = File::KeePassX->new;
-my $obj2_1 = File::KeePassX->new;
-my $obj2_2 = File::KeePassX->new;
+my $obj1_1 = File::KeePass::KDBX->new;
+my $obj1_2 = File::KeePass::KDBX->new;
+my $obj2_1 = File::KeePass::KDBX->new;
+my $obj2_2 = File::KeePass::KDBX->new;
 my $G1 = $obj1_1->add_group({ title => 'personal' });
 my $G2 = $obj1_1->add_group({ title => 'career',  group => $G1 });
 my $G3 = $obj1_1->add_group({ title => 'finance', group => $G1 });
@@ -40,7 +40,7 @@ print "# v1 -> v1\n";
 $ok = $obj1_2->parse_db($obj1_1->gen_db($pass), $pass, {auto_lock => 0});
 my $dump2 = "\n".eval { $obj1_2->dump_groups };
 is($dump1, $dump2, "Export v1/import v1 is fine"); TODO: {
-    local $TODO = 'File::KeePassX defaults to a version 2 database';
+    local $TODO = 'File::KeePass::KDBX defaults to a version 2 database';
     is(eval{$obj1_1->header->{'version'}}, undef, 'No version set on pure gen object');
     is($obj1_2->header->{'version'}, 1, 'Correct version 1 of re-import');
 };
@@ -52,7 +52,7 @@ $ok = $obj2_1->parse_db($obj1_1->gen_db($pass, {version => 2}), $pass, {auto_loc
 my $dump3 = "\n".eval { $obj2_1->dump_groups };
 is($dump2, $dump3, "Export from v1 to v2/import v2 is fine");
 TODO: {
-    local $TODO = 'File::KeePassX defaults to a version 2 database';
+    local $TODO = 'File::KeePass::KDBX defaults to a version 2 database';
     is(eval{$obj1_1->header->{'version'}}, undef, 'No version set on pure gen object');
 };
 is($obj2_1->header->{'version'}, 2, 'Correct version 2 of re-import');
@@ -76,7 +76,7 @@ $ok = eval { $obj1_1->parse_db($obj2_2->gen_db($pass, {version => 1}), $pass, {a
 ok($ok, "Gen and parse a db") or diag "Error: $@";
 my $dump6 = "\n".eval { $obj1_1->dump_groups };
 TODO: {
-    local $TODO = 'File::KeePassX always generates 128-bit UUIDs which are lossfully converted';
+    local $TODO = 'File::KeePass::KDBX always generates 128-bit UUIDs which are lossfully converted';
     is($dump5, $dump6, "Export v2/import v1 is fine");
 };
 is($obj2_2->header->{'version'}, 1, 'Correct version 1');

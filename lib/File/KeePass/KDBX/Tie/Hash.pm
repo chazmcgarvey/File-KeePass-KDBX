@@ -1,4 +1,4 @@
-package File::KeePassX::Tie::Hash;
+package File::KeePass::KDBX::Tie::Hash;
 # ABSTRACT: Hash base class
 
 use warnings;

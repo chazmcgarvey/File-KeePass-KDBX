@@ -1,18 +1,18 @@
 #!/usr/bin/env perl
 
-# This is copied nearly verbatim from the File::KeePass distribution to test that File::KeePassX passes the
-# same tests.
+# This is copied nearly verbatim from the File::KeePass distribution to test that File::KeePass::KDBX passes
+# the same tests.
 
 use strict;
 use warnings;
 
-use File::KeePassX;
+use File::KeePass::KDBX;
 use Test::Deep;
 use Test::More;
 
 my $dump;
 my $pass = "foo";
-my $obj  = File::KeePassX->new({version => 2});
+my $obj  = File::KeePass::KDBX->new({version => 2});
 ok(!eval { $obj->groups }, "General - No groups until we do something");
 ok(!eval { $obj->header }, "General - No header until we do something");
 
@@ -29,7 +29,7 @@ my $gid = $g->{'id'};
 ok($gid, "Groups - Could add a group");
 ok($obj->groups, "Groups - Now we have groups");
 TODO: {
-    local $TODO = 'trivial File::KeePassX difference';
+    local $TODO = 'trivial File::KeePass::KDBX difference';
     ok(!eval { $obj->header }, "Groups - Still no header until we do something");
 }
 ok($g = $obj->find_group({id => $gid}), "Groups - Found a group");
@@ -199,7 +199,7 @@ $dump = eval { $obj->dump_groups };
 
 # test for correct stack unwinding during the parse_group phase
 my ($G, $G2, $G3);
-my $obj2 = File::KeePassX->new({version => 2});
+my $obj2 = File::KeePass::KDBX->new({version => 2});
 $G = $obj2->add_group({ title => 'hello' });
 $G = $obj2->add_group({ title => 'world',    group => $G });
 $G = $obj2->add_group({ title => 'i am sam', group => $G });
@@ -214,7 +214,7 @@ is($dump2, $dump, "Dumps should match after gen_db->parse_db");# && diag($dump);
 ###----------------------------------------------------------------###
 
 # test for correct stack unwinding during the parse_group phase
-$obj2 = File::KeePassX->new({version => 2});
+$obj2 = File::KeePass::KDBX->new({version => 2});
 $G  = $obj2->add_group({ title => 'personal' });
 $G2 = $obj2->add_group({ title => 'career',  group => $G  });
 $G2 = $obj2->add_group({ title => 'finance', group => $G  });
@@ -234,10 +234,10 @@ is($dump2, $dump, "Dumps should match after gen_db->parse_db");# && diag($dump);
 ###----------------------------------------------------------------###
 
 # test for entry round tripping
-my $_id = File::KeePassX->gen_uuid();
+my $_id = File::KeePass::KDBX->gen_uuid();
 ok($_id, "Can generate a uuid");
 
-$obj2 = File::KeePassX->new;
+$obj2 = File::KeePass::KDBX->new;
 $e = {
     accessed => "2010-06-24 15:09:19",
     auto_type => [{
@@ -288,7 +288,7 @@ ok($E, "Added a complex entry");
 $e2 = $obj2->find_entry({id => $e->{'id'}});
 ok($e2, "Found the entry");
 TODO: {
-    local $TODO = 'trivial File::KeePassX difference';
+    local $TODO = 'trivial File::KeePass::KDBX difference';
     is_deeply($e2, $e, "Entry matches");
 }
 cmp_deeply($e2, superhashof($e), "Entry matches");
@@ -300,7 +300,7 @@ ok($ok, "generated and parsed a file");
 my $e3 = $obj2->find_entry({id => $e->{'id'}});
 ok($e3, "Found the entry");
 TODO: {
-    local $TODO = 'trivial File::KeePassX difference';
+    local $TODO = 'trivial File::KeePass::KDBX difference';
     is_deeply($e3, $e, "Entry still matches after export & import");
 }
 cmp_deeply($e3, superhashof($e), "Entry still matches after export & import");

@@ -1,10 +1,10 @@
-package File::KeePassX::Tie::CustomIcons;
+package File::KeePass::KDBX::Tie::CustomIcons;
 # ABSTRACT: Database custom icons
 
 use warnings;
 use strict;
 
-use parent 'File::KeePassX::Tie::Hash';
+use parent 'File::KeePass::KDBX::Tie::Hash';
 
 our $VERSION = '999.999'; # VERSION
 

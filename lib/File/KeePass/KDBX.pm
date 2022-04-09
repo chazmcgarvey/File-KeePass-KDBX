@@ -1,5 +1,5 @@
-package File::KeePassX;
-# ABSTRACT: Read and write KDBX files (File::KeePass compatibility shim)
+package File::KeePass::KDBX;
+# ABSTRACT: Read and write KDBX files (using the File::KDBX backend)
 
 use utf8;
 use warnings;
@@ -28,9 +28,9 @@ BEGIN {
 
 =method new
 
-    $k = File::KeePassX->new(%attributes);
+    $k = File::KeePass::KDBX->new(%attributes);
 
-    $k = File::KeePassX->new($legacy_keepass);
+    $k = File::KeePass::KDBX->new($legacy_keepass);
 
 Construct a new KeePass 2 database.
 
@@ -67,7 +67,7 @@ sub DESTROY { !in_global_destruction and $_[0]->clear }
 
     $k_copy = $k->clone;
     OR
-    $k_copy = File::KeePassX->new($k);
+    $k_copy = File::KeePass::KDBX->new($k);
 
 Make a copy.
 
@@ -118,8 +118,8 @@ sub clear {
 Get or set the L<File::KDBX> instance. The C<File::KDBX> is the object that actually contains the database
 data, so setting this will implicitly replace all of the data with data from the new database.
 
-Getting the C<File::KDBX> associated with a C<File::KeePassX> grants you access to new functionality that
-C<File::KeePassX> doesn't have any interface for, including:
+Getting the C<File::KDBX> associated with a C<File::KeePass::KDBX> grants you access to new functionality that
+C<File::KeePass> doesn't have any interface for, including:
 
 =for :list
 * KDBX4-exclusive data (e.g. KDF parameters and public custom data headers)
@@ -146,7 +146,7 @@ sub kdbx {
 =method load_db
 
     $k = $k->load_db($filepath, $key);
-    $k = File::KeePassX->load_db($filepath, $key, \%args);
+    $k = File::KeePass::KDBX->load_db($filepath, $key, \%args);
 
 Load a database from a file. C<$key> is a master key, typically a password or passphrase and might also
 include a keyfile path (e.g. C<[$password, $keyfile]>). C<%args> are the same as for L</new>.
@@ -168,7 +168,7 @@ sub load_db {
 =method parse_db
 
     $k = $k->parse_db($string, $key);
-    $k = File::KeePassX->parse_db($string, $key, \%args);
+    $k = File::KeePass::KDBX->parse_db($string, $key, \%args);
 
 Load a database from a string. C<$key> is a master key, typically a password or passphrase and might also
 include a keyfile path (e.g. C<[$password, $keyfile]>). C<%args> are the same as for L</new>.
@@ -783,11 +783,11 @@ __END__
 
 =head1 SYNOPSIS
 
-    use File::KeePassX;
+    use File::KeePass::KDBX;
 
-    my $k = File::KeePassX->new($kdbx);
+    my $k = File::KeePass::KDBX->new($kdbx);
     # OR
-    my $k = File::KeePassX->load_db($filepath, $password);
+    my $k = File::KeePass::KDBX->load_db($filepath, $password);
 
     print Dumper $k->header;
     print Dumper $k->groups; # passwords are locked
@@ -814,10 +814,10 @@ although by its nature it will aim to be as compatible as possible with the B<Fi
 it's stable enough to start using without fear of interface changes. Just don't depend on any of its guts
 (which you shouldn't do even if it were completely "stable").
 
-B<File::KeePassX> incorporates some of the code from B<File::KeePass> but it is not a required dependency and
-need not be installed for basic functionality. If B<File::KeePass> is installed, it will be used as a backend
-parser and generator for working with older KDB (KeePass 1) files since B<File::KDBX> has no native KDB
-parser.
+B<File::KeePass::KDBX> incorporates some of the code from B<File::KeePass> but it is not a required dependency
+and need not be installed for basic functionality. If B<File::KeePass> is installed, it will be used as
+a backend parser and generator for working with older KDB (KeePass 1) files since B<File::KDBX> has no native
+KDB parser.
 
 =head1 CAVEATS
 
@@ -825,21 +825,21 @@ parser.
 
 This I<is> supposed to be a drop-in replacement for L<File::KeePass>. If you're sticking to the
 B<File::KeePass> public interface you probably won't have to rewrite any code. If you do, it could be
-considered a B<File::KeePassX> bug. But there are some differences that some code might notice and even could
-get tripped up on:
+considered a B<File::KeePass::KDBX> bug. But there are some differences that some code might notice and even
+could get tripped up on:
 
-B<File::KeePassX> does not provide any of the L<File::KeePass/"UTILITY METHODS"> or
+B<File::KeePass::KDBX> does not provide any of the L<File::KeePass/"UTILITY METHODS"> or
 L<File::KeePass/"OTHER METHODS"> unless incidentally, with two exceptions: L</now> and L</default_exp>.
 I judge these other methods to not be useful for I<users> of B<File::KeePass> and so probably aren't used by
 anyone, but if I'm wrong you can get them by using B<File::KeePass>:
 
-    use File::KeePass;  # must use before File::KeePassX
-    use File::KeePassX;
+    use File::KeePass;  # must use before File::KeePass::KDBX
+    use File::KeePass::KDBX;
 
-You might also need to do this if the answer to C<< File::KeePassX->new->isa('File::KeePass') >> is important
-to your code.
+You might also need to do this if the answer to C<< File::KeePass::KDBX->new->isa('File::KeePass') >> is
+important to your code.
 
-B<File::KeePassX> does not take any pains to replicate
+B<File::KeePass::KDBX> does not take any pains to replicate
 L<File::KeePass bugs|https://rt.cpan.org/Public/Dist/Display.html?Name=File-KeePass>. If your code has any
 workarounds, you might need or want to undo those. Issues known to be fixed (or not applicable) are:
 L<#85012|https://rt.cpan.org/Ticket/Display.html?id=85012>,
@@ -854,10 +854,10 @@ L<#94753|https://rt.cpan.org/Ticket/Display.html?id=94753> and
 L<#87109|https://rt.cpan.org/Ticket/Display.html?id=87109>.
 
 B<File::KeePass> provides the C<header_size> field in the L</header>, which is the size of the file header in
-number of bytes. B<File::KeePassX> does not.
+number of bytes. B<File::KeePass::KDBX> does not.
 
 B<File::KeePass> supports a C<keep_xml> option on L</load_db> to retain a copy of the XML of a KDBX file from
-the parser as a string. B<File::KeePassX> does not support this option. To do something similar with
+the parser as a string. B<File::KeePass::KDBX> does not support this option. To do something similar with
 B<File::KDBX>:
 
     my $kdbx = File::KDBX->load($filepath, $key, inner_format => 'Raw');
@@ -867,12 +867,12 @@ There might be idiosyncrasies related to default values and when they're set. Fi
 might exist but be undefined in one where they just don't exist in the other. You should check for values
 using L<perlfunc/defined> instead of L<perlfunc/exists>.
 
-B<File::KeePassX> might be stricter or fail earlier in some cases. For example, setting a date & time or UUID
-with an invalid format might fail immediately rather than later on in a query or at file generation. To avoid
-problems, stop trying to do invalid things. 😃
+B<File::KeePass::KDBX> might be stricter or fail earlier in some cases. For example, setting a date & time or
+UUID with an invalid format might fail immediately rather than later on in a query or at file generation. To
+avoid problems, stop trying to do invalid things. 😃
 
 Some methods have different performance profiles from their B<File::KeePass> counterparts (besides any general
-overhead). Operations that are constant time in B<File::KeePass> might be linear in B<File::KeePassX>, for
-example. Or some things in B<File::KeePassX> might be faster than B<File::KeePass>.
+overhead). Operations that are constant time in B<File::KeePass> might be linear in B<File::KeePass::KDBX>,
+for example. Or some things in B<File::KeePass::KDBX> might be faster than B<File::KeePass>.
 
 =cut

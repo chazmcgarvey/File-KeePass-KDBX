@@ -1,4 +1,4 @@
-package File::KeePassX::Tie::Header;
+package File::KeePass::KDBX::Tie::Header;
 # ABSTRACT: Database headers
 
 use warnings;
@@ -6,11 +6,11 @@ use strict;
 
 use File::KDBX::Constants qw(:magic :version :cipher :random_stream);
 use File::KDBX::Util qw(snakify);
-use File::KeePassX;
+use File::KeePass::KDBX;
 use Time::Piece;
 use namespace::clean;
 
-use parent 'File::KeePassX::Tie::Hash';
+use parent 'File::KeePass::KDBX::Tie::Hash';
 
 our $VERSION = '999.999'; # VERSION
 
@@ -41,8 +41,8 @@ my @META_FIELDS = qw(
 );
 # MemoryProtection - flattened in KeePass
 # Binaries - distributed to entries in KeePass
-# CustomIcons - handled by File::KeePassX::Tie::CustomIcons
-# CustomData - handled by File::KeePassX::Tie::CustomData
+# CustomIcons - handled by File::KeePass::KDBX::Tie::CustomIcons
+# CustomData - handled by File::KeePass::KDBX::Tie::CustomData
 
 my %GET = (
     sig1        => sub { $_[0]->sig1 },
@@ -115,7 +115,7 @@ for my $meta_key (@META_FIELDS) {
     my $key = snakify($meta_key);
     next if $GET{$key};
     if ($key =~ /_changed$/) {
-        $GET{$key} = sub { File::KeePassX::_decode_datetime($_[0]->meta->{$key}) };
+        $GET{$key} = sub { File::KeePass::KDBX::_decode_datetime($_[0]->meta->{$key}) };
     }
     else {
         $GET{$key} = sub { $_[0]->meta->{$key} };
@@ -192,7 +192,7 @@ for my $meta_key (@META_FIELDS) {
     my $key = snakify($meta_key);
     next if $SET{$key};
     if ($key =~ /_changed$/) {
-        $SET{$key} = sub { $_[0]->meta->{$key} = File::KeePassX::_encode_datetime($_) };
+        $SET{$key} = sub { $_[0]->meta->{$key} = File::KeePass::KDBX::_encode_datetime($_) };
     }
     else {
         $SET{$key} = sub { $_[0]->meta->{$key} = $_ };

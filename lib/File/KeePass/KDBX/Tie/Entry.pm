@@ -1,4 +1,4 @@
-package File::KeePassX::Tie::Entry;
+package File::KeePass::KDBX::Tie::Entry;
 # ABSTRACT: Database entry
 
 use warnings;
@@ -9,18 +9,18 @@ use Time::Piece;
 use boolean;
 use namespace::clean;
 
-use parent 'File::KeePassX::Tie::Hash';
+use parent 'File::KeePass::KDBX::Tie::Hash';
 
 our $VERSION = '999.999'; # VERSION
 
 my %GET = (
-    accessed            => sub { File::KeePassX::_decode_datetime($_[0]->last_access_time) },
+    accessed            => sub { File::KeePass::KDBX::_decode_datetime($_[0]->last_access_time) },
     usage_count         => sub { $_[0]->usage_count },
     expires_enabled     => sub { $_[0]->expires ? 1 : 0 },
-    created             => sub { File::KeePassX::_decode_datetime($_[0]->creation_time) },
-    expires             => sub { File::KeePassX::_decode_datetime($_[0]->expiry_time) },
-    modified            => sub { File::KeePassX::_decode_datetime($_[0]->last_modification_time) },
-    location_changed    => sub { File::KeePassX::_decode_datetime($_[0]->location_changed) },
+    created             => sub { File::KeePass::KDBX::_decode_datetime($_[0]->creation_time) },
+    expires             => sub { File::KeePass::KDBX::_decode_datetime($_[0]->expiry_time) },
+    modified            => sub { File::KeePass::KDBX::_decode_datetime($_[0]->last_modification_time) },
+    location_changed    => sub { File::KeePass::KDBX::_decode_datetime($_[0]->location_changed) },
     auto_type_munge     => sub { $_[0]->auto_type->{data_transfer_obfuscation} ? 1 : 0 },
     auto_type_enabled   => sub { $_[0]->auto_type->{enabled} ? 1 : 0 },
     auto_type           => sub { $_[-1]->_tie([], 'AssociationList', $_[0]) },
@@ -41,13 +41,13 @@ my %GET = (
     binary              => sub { $_[-1]->_tie({}, 'Binary', $_[0]) },
 );
 my %SET = (
-    accessed            => sub { $_[0]->last_access_time(File::KeePassX::_encode_datetime($_)) },
+    accessed            => sub { $_[0]->last_access_time(File::KeePass::KDBX::_encode_datetime($_)) },
     usage_count         => sub { $_[0]->usage_count($_) },
     expires_enabled     => sub { $_[0]->expires($_) },
-    created             => sub { $_[0]->creation_time(File::KeePassX::_encode_datetime($_)) },
-    expires             => sub { $_[0]->expiry_time(File::KeePassX::_encode_datetime($_)) },
-    modified            => sub { $_[0]->last_modification_time(File::KeePassX::_encode_datetime($_)) },
-    location_changed    => sub { $_[0]->location_changed(File::KeePassX::_encode_datetime($_)) },
+    created             => sub { $_[0]->creation_time(File::KeePass::KDBX::_encode_datetime($_)) },
+    expires             => sub { $_[0]->expiry_time(File::KeePass::KDBX::_encode_datetime($_)) },
+    modified            => sub { $_[0]->last_modification_time(File::KeePass::KDBX::_encode_datetime($_)) },
+    location_changed    => sub { $_[0]->location_changed(File::KeePass::KDBX::_encode_datetime($_)) },
     override_url        => sub { $_[0]->override_url($_) },
     auto_type_munge     => sub { $_[0]->auto_type->{data_transfer_obfuscation} = boolean($_) },
     auto_type           => sub { }, # TODO - Replace all autotype associations
@@ -57,7 +57,7 @@ my %SET = (
     protected           => sub { }, # TODO - Replace all protect flags
     title               => sub { $_[0]->title($_) },
     icon                => sub { $_[0]->icon_id($_) },
-    id                  => sub { $_[0]->uuid(File::KeePassX::_encode_uuid($_)) },
+    id                  => sub { $_[0]->uuid(File::KeePass::KDBX::_encode_uuid($_)) },
     foreground_color    => sub { $_[0]->foreground_color($_) },
     background_color    => sub { $_[0]->background_color($_) },
     url                 => sub { $_[0]->url($_) },
