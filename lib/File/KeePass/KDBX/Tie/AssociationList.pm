@@ -28,14 +28,14 @@ sub FETCHSIZE {
 
 sub STORE {
     my ($self, $index, $value) = @_;
-    my ($entry) = @$self;
+    my ($entry, $k) = @$self;
     my %info = %$value;
     %$value = ();
     my $association = $entry->auto_type->{associations}[$index] = {
         window              => $info{window},
         keystroke_sequence  => $info{keys},
     };
-    return $self->_tie($value, 'Association', $association);
+    return $k->_tie($value, 'Association', $association);
 }
 
 sub STORESIZE {

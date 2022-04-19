@@ -21,7 +21,7 @@ sub FETCH {
     my ($self, $index) = @_;
     my ($thing, $method, $k) = @$self;
     my $entry = $thing->$method->[$index] or return;
-    return $k->_tie({}, 'Entry', $k->kdbx->_entry($entry));
+    return $k->_tie({}, 'Entry', $k->kdbx->_wrap_entry($entry));
 }
 
 sub FETCHSIZE {
@@ -32,11 +32,11 @@ sub FETCHSIZE {
 
 sub STORE {
     my ($self, $index, $value) = @_;
+    return if !$value;
     my ($thing, $method, $k) = @$self;
-    my %info = %$value;
+    my $entry_info = File::KDBX::Loader::KDB::_convert_keepass_to_kdbx_entry($value);
     %$value = ();
-    my $entry_info = File::KDBX::Loader::KDB::_convert_keepass_to_kdbx_entry(\%info);
-    return $self->_tie($value, 'Entry', $thing->$method->[$index] = $k->kdbx->_entry($entry_info));
+    return $k->_tie($value, 'Entry', $thing->$method->[$index] = $k->kdbx->_wrap_entry($entry_info));
 }
 
 sub STORESIZE {

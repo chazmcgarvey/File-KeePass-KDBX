@@ -7,6 +7,7 @@ use strict;
 use warnings;
 
 use File::KeePass::KDBX;
+use File::Temp qw(tmpnam);
 use Test::Deep;
 use Test::More;
 
@@ -149,7 +150,7 @@ ok($obj->is_locked, "Locking - Object is auto locked");
 
 # test file operations
 $obj->unlock;
-my $file = __FILE__.".kdbx";
+my $file = tmpnam . '.kdb';
 
 ok(!eval { $obj->save_db }, "File - Missing file");
 ok(!eval { $obj->save_db($file) }, "File - Missing pass");

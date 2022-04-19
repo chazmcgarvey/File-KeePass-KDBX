@@ -10,16 +10,16 @@ use Crypt::Misc 0.029 qw(decode_b64 encode_b64);
 use Devel::GlobalDestruction;
 use File::KDBX::Constants qw(:header :magic :version);
 use File::KDBX::Loader::KDB;
-use File::KDBX::Util qw(generate_uuid load_optional);
+use File::KDBX::Util qw(clone_nomagic generate_uuid load_optional);
+use Hash::Util::FieldHash qw(fieldhashes);
 use Module::Load;
-use Scalar::Util qw(blessed looks_like_number refaddr weaken);
+use Scalar::Util qw(blessed looks_like_number weaken);
 use boolean;
 use namespace::clean;
 
 our $VERSION = '999.999'; # VERSION
 
-my %KDBX;
-my %TIED;
+fieldhashes \my (%KDBX, %TIED);
 
 BEGIN {
     our @ISA;
@@ -29,10 +29,11 @@ BEGIN {
 =method new
 
     $k = File::KeePass::KDBX->new(%attributes);
+    $k = File::KeePass::KDBX->new($kdbx);
+    $k = File::KeePass::KDBX->new($keepass);
 
-    $k = File::KeePass::KDBX->new($legacy_keepass);
-
-Construct a new KeePass 2 database.
+Construct a new KeePass 2 database from a set of attributes, a L<File::KDBX> instance or a L<File::KeePass>
+instance.
 
 =cut
 
@@ -43,10 +44,7 @@ sub new {
     return $_[0]->clone if @_ == 1 && (blessed $_[0] // '') eq __PACKAGE__;
 
     if (@_ == 1 && blessed $_[0] && $_[0]->isa('File::KeePass')) {
-        my $kdbx = File::KDBX::Loader::KDB::convert_keepass_to_kdbx($_[0]);
-        my $self = bless {}, $class;
-        $self->kdbx($kdbx);
-        return $self;
+        return $class->from_fkp(@_);
     }
 
     if (@_ == 1 && blessed $_[0] && $_[0]->isa('File::KDBX')) {
@@ -81,15 +79,19 @@ sub clone {
 
 sub STORABLE_freeze {
     my $self = shift;
-    return '', $KDBX{refaddr($self)};
+    my $copy = {%$self};
+    delete @$self{qw(header groups)};
+    return '', $copy, $KDBX{$self};
 }
 
 sub STORABLE_thaw {
     my $self    = shift;
     my $cloning = shift;
-    my $empty   = shift;
+    shift;  # empty
+    my $copy    = shift;
     my $kdbx    = shift;
 
+    @$self{keys %$copy} = values %$copy;
     $self->kdbx($kdbx) if $kdbx;
 }
 
@@ -105,8 +107,8 @@ See L<File::KeePass/clear>.
 
 sub clear {
     my $self = shift;
-    delete $KDBX{refaddr($self)};
-    delete $TIED{refaddr($self)};
+    delete $KDBX{$self};
+    delete $TIED{$self};
     delete @$self{qw(header groups)};
 }
 
@@ -135,12 +137,42 @@ sub kdbx {
     $self = $self->new if !ref $self;
     if (@_) {
         $self->clear;
-        $KDBX{refaddr($self)} = shift;
+        $KDBX{$self} = shift;
     }
-    $KDBX{refaddr($self)} //= do {
-        require File::KDBX;
-        File::KDBX->new;
-    };
+    $KDBX{$self} //= do { require File::KDBX; File::KDBX->new };
+}
+
+=method to_fkp
+
+    $fkp = $k->to_fkp;
+
+Convert a L<File::KeePass::KDBX> to a L<File::KeePass>. The resulting object is a separate copy of the
+database; each can be modified independently.
+
+=cut
+
+sub to_fkp {
+    my $self = shift;
+    load_optional('File::KeePass');
+    return File::KeePass->new(clone_nomagic({%$self, header => $self->header, groups => $self->groups}));
+}
+
+=method from_fkp
+
+    $k = File::KeePass::KDBX->from_fkp($fkp);
+
+Convert a L<File::KeePass> to a L<File::KeePass::KDBX>. The resulting object is a separate copy of the
+database; each can be modified independently.
+
+=cut
+
+sub from_fkp {
+    my $class = shift;
+    my $k = shift;
+    my $kdbx = File::KDBX::Loader::KDB::convert_keepass_to_kdbx($k);
+    my $self = bless {}, $class;
+    $self->kdbx($kdbx);
+    return $self;
 }
 
 =method load_db
@@ -341,7 +373,7 @@ See L<File::KeePass/header>.
 
 sub header {
     my $self = shift;
-    return if !exists $KDBX{refaddr($self)};
+    return if !exists $KDBX{$self};
     $self->{header} //= $self->_tie({}, 'Header', $self->kdbx);
 }
 
@@ -356,7 +388,7 @@ in a shape compatible with L<File::KeePass/groups>.
 
 sub groups {
     my $self = shift;
-    return if !exists $KDBX{refaddr($self)};
+    return if !exists $KDBX{$self};
     $self->{groups} //= $self->_tie([], 'GroupList', $self->kdbx);
 }
 
@@ -504,9 +536,7 @@ sub add_entry {
     $entry->{expires} //= $self->default_exp;
 
     my $entry_info = File::KDBX::Loader::KDB::_convert_keepass_to_kdbx_entry($entry);
-    if (!$parent && $self->kdbx->_is_implicit_root) {
-        $parent = $self->kdbx->root->groups->[0];
-    }
+    $parent = $self->kdbx->root->groups->[0] if !$parent && $self->kdbx->_has_implicit_root;
     my $entry_obj = $self->kdbx->add_entry($entry_info, parent => $parent);
     return $self->_tie({}, 'Entry', $entry_obj);
 }
@@ -619,6 +649,15 @@ Get the default value to use as the expiry time.
 
 sub default_exp { $_[0]->{default_exp} || '2999-12-31 23:23:59' }
 
+=method now
+
+    $string = $k->now;
+
+Get a timestamp representing the current date and time.
+
+=cut
+
+# Copied from File::KeePass - thanks paul
 sub now {
     my ($self, $time) = @_;
     my ($sec, $min, $hour, $day, $mon, $year) = gmtime($time || time);
@@ -717,9 +756,7 @@ sub locked_entry_password {
     return if !$entry;
 
     my $entry_obj = $entry->{__object} or return;
-
-    my $cleanup = $self->kdbx->unlock_scoped;
-    return $entry_obj->password;
+    return $entry_obj->password_peek;
 }
 
 ##############################################################################
@@ -730,10 +767,10 @@ sub _tie {
     my $class   = shift;
     my $obj     = shift;
 
-    my $cache = $TIED{refaddr($self)} //= {};
+    my $cache = $TIED{$self} //= {};
 
     $class = __PACKAGE__."::Tie::$class" if $class !~ s/^\+//;
-    my $key = "$class:" . refaddr($obj);
+    my $key = "$class:" . Hash::Util::FieldHash::id($obj);
     my $hit = $cache->{$key};
     return $hit if defined $hit;
 
@@ -800,14 +837,9 @@ See L<File::KeePass> for a more complete synopsis.
 =head1 DESCRIPTION
 
 This is a L<File::KeePass> compatibility shim for L<File::KDBX>. It presents the same interface as
-B<File::KeePass> (mostly, see L</"Known discrepancies">) but uses B<File::KDBX> for database storage, file
-parsing, etc. It is meant to be a drop-in replacement for B<File::KeePass>. Documentation I<here> might be
-somewhat thin, so just refer to the B<File::KeePass> documentation since everything should work the same.
-
-This shim has some overhead which should make it generally slower than using either B<File::KeePass> or
-B<File::KDBX> directly, but it is a quick way to gain the advantages of the newer B<File::KDBX> (KDBX4
-support, better UTF-8 handling, security improvements, etc.) without having to rewrite any significant portion
-of your application.
+B<File::KeePass> (mostly, see L</"Discrepancies">) but uses B<File::KDBX> for database storage, file parsing,
+etc. It is meant to be a drop-in replacement for B<File::KeePass>. Documentation I<here> might be somewhat
+thin, so just refer to the B<File::KeePass> documentation since everything should look the same.
 
 Unlike B<File::KDBX> itself, I<this> module is EXPERIMENTAL. How it works might change in the future --
 although by its nature it will aim to be as compatible as possible with the B<File::KeePass> interface, so
@@ -821,12 +853,47 @@ KDB parser.
 
 =head1 CAVEATS
 
-=head2 Known discrepancies
+This shim uses L<perltie> magics. Some data structures look and act like regular hashes and arrays (mostly),
+but you might notice some unexpected magical things happen, like hash fields that populate themselves. The
+magic is only there to make matching the B<File::KeePass> interface possible, since that interface assumes
+some amount of interaction with unblessed data structures. Some effort was made to at least hide the magic
+where reasonable; any magical behavior is incidental and not considered a feature.
 
-This I<is> supposed to be a drop-in replacement for L<File::KeePass>. If you're sticking to the
+You should expect some considerable overhead which makes this module generally slower than using either
+B<File::KeePass> or B<File::KDBX> directly. In some cases this might be due to an inefficient implementation
+in the shim, but largely it is the cost of transparent compatibility.
+
+If performance is critical and you still don't want to rewrite your code to use B<File::KDBX> directly but do
+want to take advantage of some of the new stuff, there is also the option to go part way. The strategy here is
+to use B<File::KeePass::KDBX> to load a database and then immediately convert it to a B<File::KeePass> object.
+Use that object without any runtime overhead, and then if and when you're ready to save the database or use
+any other B<File::KDBX> feature, "upgrade" it back into a B<File::KeePass::KDBX> object. This strategy would
+require modest code modifications to your application, to change:
+
+    my $k = File::KeePass->new('database.kdbx', 'masterpw');
+
+to this:
+
+    my $k = File::KeePass::KDBX->load_db('database.kdbx', 'masterpw')->to_fkp;
+    # $k is a normal File::KeePass
+
+and change:
+
+    $k->save_db('database.kdbx', 'masterpw');
+
+to this:
+
+    File::KeePass::KDBX->from_fkp($k)->save_db('database.kdbx', 'masterpw');
+
+This works because B<File::KeePass::KDBX> provides methods L</to_fkp> and L</from_fkp> for converting to and
+from B<File::KeePass>. L</new> also works instead of L</from_fkp>.
+
+=head2 Discrepancies
+
+This shim I<is> supposed to be a drop-in replacement for L<File::KeePass>. If you're sticking to the
 B<File::KeePass> public interface you probably won't have to rewrite any code. If you do, it could be
-considered a B<File::KeePass::KDBX> bug. But there are some differences that some code might notice and even
-could get tripped up on:
+considered a B<File::KeePass::KDBX> bug. But there are some differences that some code might notice and could
+even get tripped up on:
 
 B<File::KeePass::KDBX> does not provide any of the L<File::KeePass/"UTILITY METHODS"> or
 L<File::KeePass/"OTHER METHODS"> unless incidentally, with two exceptions: L</now> and L</default_exp>.
@@ -836,12 +903,14 @@ anyone, but if I'm wrong you can get them by using B<File::KeePass>:
     use File::KeePass;  # must use before File::KeePass::KDBX
     use File::KeePass::KDBX;
 
-You might also need to do this if the answer to C<< File::KeePass::KDBX->new->isa('File::KeePass') >> is
-important to your code.
+Using both B<File::KeePass> and B<File::KeePass::KDBX> in this order will make the latter a proper subclass of
+the former, so all the utility methods will be available via inheritance. You might also need to do this if
+the answer to C<< File::KeePass::KDBX->new->isa('File::KeePass') >> is important to your code.
 
 B<File::KeePass::KDBX> does not take any pains to replicate
 L<File::KeePass bugs|https://rt.cpan.org/Public/Dist/Display.html?Name=File-KeePass>. If your code has any
-workarounds, you might need or want to undo those. Issues known to be fixed (or not applicable) are:
+workarounds, you might need or want to undo those. The issues known to be fixed (or not applicable) by using
+B<File::KeePass::KDBX> are:
 L<#85012|https://rt.cpan.org/Ticket/Display.html?id=85012>,
 L<#82582|https://rt.cpan.org/Ticket/Display.html?id=82582>,
 L<#124531|https://rt.cpan.org/Ticket/Display.html?id=124531>,
@@ -864,15 +933,18 @@ B<File::KDBX>:
     my $xml = $kdbx->raw;
 
 There might be idiosyncrasies related to default values and when they're set. Fields within data structures
-might exist but be undefined in one where they just don't exist in the other. You should check for values
-using L<perlfunc/defined> instead of L<perlfunc/exists>.
+might exist but be undefined in one where they just don't exist in the other. You might need to check for
+values using L<perlfunc/defined> instead of L<perlfunc/exists>.
 
-B<File::KeePass::KDBX> might be stricter or fail earlier in some cases. For example, setting a date & time or
-UUID with an invalid format might fail immediately rather than later on in a query or at file generation. To
-avoid problems, stop trying to do invalid things. 😃
+B<File::KeePass::KDBX> might have slightly different error handling semantics. It might be stricter or fail
+earlier in some cases. For example, setting a date & time or UUID with an invalid format might fail
+immediately rather than later on in a query or at file generation. To achieve perfect consistency, you might
+need to validate your inputs and handle errors before passing them to B<File::KeePass::KDBX>.
 
-Some methods have different performance profiles from their B<File::KeePass> counterparts (besides any general
-overhead). Operations that are constant time in B<File::KeePass> might be linear in B<File::KeePass::KDBX>,
-for example. Or some things in B<File::KeePass::KDBX> might be faster than B<File::KeePass>.
+Some methods have different performance profiles from their B<File::KeePass> counterparts. Operations that are
+constant time in B<File::KeePass> might be linear in B<File::KeePass::KDBX>, for example. Or some things in
+B<File::KeePass::KDBX> might be faster than B<File::KeePass>. Of course you are not likely to detect any
+differences unless you work with very large databases, and I don't know of any application where large KDBX
+databases are common. I don't think I<any> KDBX implementation is optimized for large databases.
 
 =cut

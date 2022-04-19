@@ -72,7 +72,7 @@ my %GET = (
     },
     checksum    => sub { undef },
     n_entries   => sub { scalar @{$_[0]->all_entries} },
-    n_groups    => sub { scalar @{$_[0]->all_groups} - ($_[0]->_is_implicit_root ? 1 : 0) },
+    n_groups    => sub { scalar @{$_[0]->all_groups} - ($_[0]->_has_implicit_root ? 1 : 0) },
     header_size => sub { undef },   # not available from KDBX
     raw         => sub { undef },   # not available from KDBX
     rounds      => sub { $_[0]->transform_rounds },
@@ -92,7 +92,7 @@ my %GET = (
     compression => sub { $_[0]->compression_flags },
     protected_stream => sub {
         my %protected_stream = (
-            STREAM_ID_RC4()         => 'rc4',
+            STREAM_ID_RC4_VARIANT() => 'rc4variant',
             STREAM_ID_SALSA20()     => 'salsa20',
             STREAM_ID_CHACHA20()    => 'chacha20',
         );
@@ -167,7 +167,7 @@ my %SET = (
     compression => sub { $_[0]->compression_flags($_) },
     protected_stream => sub {
         my %protected_stream = (
-            rc4         => STREAM_ID_RC4,
+            rc4variant  => STREAM_ID_RC4_VARIANT,
             salsa20     => STREAM_ID_SALSA20,
             chacha20    => STREAM_ID_CHACHA20,
         );
