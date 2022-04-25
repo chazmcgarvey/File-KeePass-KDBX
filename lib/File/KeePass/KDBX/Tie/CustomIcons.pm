@@ -11,10 +11,10 @@ our $VERSION = '999.999'; # VERSION
 sub keys {
     my $self = shift;
     my ($kdbx) = @$self;
-    return [keys %{$kdbx->meta->{custom_icons} || {}}];
+    return [map { $_->{uuid} } @{$kdbx->custom_icons}];
 }
 
-sub default_getter { my $key = $_[1]; sub { $_[0]->meta->{custom_icons}{$key}{value} } }
-sub default_setter { my $key = $_[1]; sub { $_[0]->meta->{custom_icons}{$key}{value} = $_ } }
+sub default_getter { my $uuid = $_[1]; sub { $_[0]->custom_icon($uuid)->{data} } }
+sub default_setter { my $uuid = $_[1]; sub { $_[0]->custom_icon($uuid, $_) } }
 
 1;
