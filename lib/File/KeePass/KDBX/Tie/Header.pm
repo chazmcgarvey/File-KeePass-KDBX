@@ -71,8 +71,8 @@ my %GET = (
                 : undef;
     },
     checksum    => sub { undef },
-    n_entries   => sub { scalar @{$_[0]->all_entries} },
-    n_groups    => sub { scalar @{$_[0]->all_groups} - ($_[0]->_has_implicit_root ? 1 : 0) },
+    n_entries   => sub { $_[0]->entries->size },
+    n_groups    => sub { $_[0]->groups->size - ($_[0]->_has_implicit_root ? 1 : 0) },
     header_size => sub { undef },   # not available from KDBX
     raw         => sub { undef },   # not available from KDBX
     rounds      => sub { $_[0]->transform_rounds },
