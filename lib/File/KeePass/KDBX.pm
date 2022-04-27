@@ -7,7 +7,6 @@ use strict;
 
 use Crypt::PRNG qw(irand);
 use Crypt::Misc 0.029 qw(decode_b64 encode_b64);
-use Devel::GlobalDestruction;
 use File::KDBX::Constants qw(:header :magic :version);
 use File::KDBX::Loader::KDB;
 use File::KDBX::Util qw(clone_nomagic generate_uuid load_optional);
@@ -59,7 +58,7 @@ sub new {
     return $self;
 }
 
-sub DESTROY { !in_global_destruction and $_[0]->clear }
+sub DESTROY { $_[0]->clear }
 
 =method clone
 
