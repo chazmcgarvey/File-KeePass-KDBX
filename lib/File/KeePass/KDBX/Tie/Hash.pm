@@ -6,7 +6,7 @@ use strict;
 
 use parent 'Tie::Hash';
 
-our $VERSION = '0.900'; # VERSION
+our $VERSION = '0.901'; # VERSION
 
 sub getters { +{} }
 sub setters { +{} }
@@ -70,7 +70,7 @@ File::KeePass::KDBX::Tie::Hash - Hash base class
 
 =head1 VERSION
 
-version 0.900
+version 0.901
 
 =for Pod::Coverage getters setters keys default_getter default_setter
 

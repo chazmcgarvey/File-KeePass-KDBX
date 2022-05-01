@@ -20,7 +20,7 @@ my %WriteMakefileArgs = (
     "Crypt::Digest" => 0,
     "Crypt::Misc" => "0.029",
     "Crypt::PRNG" => 0,
-    "File::KDBX" => 0,
+    "File::KDBX" => "0.900",
     "File::KDBX::Constants" => 0,
     "File::KDBX::Loader::KDB" => 0,
     "File::KDBX::Util" => 0,
@@ -47,7 +47,7 @@ my %WriteMakefileArgs = (
     "Test::Deep" => 0,
     "Test::More" => 0
   },
-  "VERSION" => "0.900",
+  "VERSION" => "0.901",
   "test" => {
     "TESTS" => "t/*.t"
   }
@@ -59,7 +59,7 @@ my %FallbackPrereqs = (
   "Crypt::Misc" => "0.029",
   "Crypt::PRNG" => 0,
   "ExtUtils::MakeMaker" => 0,
-  "File::KDBX" => 0,
+  "File::KDBX" => "0.900",
   "File::KDBX::Constants" => 0,
   "File::KDBX::Loader::KDB" => 0,
   "File::KDBX::Util" => 0,

@@ -6,7 +6,7 @@ use strict;
 
 use parent 'Tie::Array';
 
-our $VERSION = '0.900'; # VERSION
+our $VERSION = '0.901'; # VERSION
 
 sub TIEARRAY {
     my $class = shift;
@@ -70,7 +70,7 @@ File::KeePass::KDBX::Tie::AssociationList - Auto-type window association list
 
 =head1 VERSION
 
-version 0.900
+version 0.901
 
 =head1 BUGS
 

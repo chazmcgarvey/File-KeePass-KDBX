@@ -8,7 +8,7 @@ use File::KDBX::Loader::KDB;
 
 use parent 'Tie::Array';
 
-our $VERSION = '0.900'; # VERSION
+our $VERSION = '0.901'; # VERSION
 
 sub TIEARRAY {
     my $class = shift;
@@ -71,7 +71,7 @@ File::KeePass::KDBX::Tie::EntryList - Database entry list
 
 =head1 VERSION
 
-version 0.900
+version 0.901
 
 =head1 BUGS
 
