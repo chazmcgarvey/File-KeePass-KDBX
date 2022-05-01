@@ -755,7 +755,7 @@ sub locked_entry_password {
     return if !$entry;
 
     my $entry_obj = $entry->{__object} or return;
-    return $entry_obj->password_peek;
+    return $entry_obj->string_peek('Password');
 }
 
 ##############################################################################
