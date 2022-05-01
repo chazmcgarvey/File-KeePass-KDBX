@@ -7,6 +7,7 @@ use strict;
 
 use Crypt::PRNG qw(irand);
 use Crypt::Misc 0.029 qw(decode_b64 encode_b64);
+use File::KDBX 0.900;
 use File::KDBX::Constants qw(:header :magic :version);
 use File::KDBX::Loader::KDB;
 use File::KDBX::Util qw(clone_nomagic generate_uuid load_optional);
@@ -138,7 +139,7 @@ sub kdbx {
         $self->clear;
         $KDBX{$self} = shift;
     }
-    $KDBX{$self} //= do { require File::KDBX; File::KDBX->new };
+    $KDBX{$self} //= File::KDBX->new;
 }
 
 =method to_fkp
@@ -436,7 +437,7 @@ sub add_group {
     $group->{expires} //= $self->default_exp;
 
     my $group_info = File::KDBX::Loader::KDB::_convert_keepass_to_kdbx_group($group);
-    my $group_obj = $self->kdbx->add_group($group_info, parent => $parent);
+    my $group_obj = $self->kdbx->add_group($group_info, group => $parent);
     return $self->_tie({}, 'Group', $group_obj);
 }
 
@@ -536,7 +537,7 @@ sub add_entry {
 
     my $entry_info = File::KDBX::Loader::KDB::_convert_keepass_to_kdbx_entry($entry);
     $parent = $self->kdbx->root->groups->[0] if !$parent && $self->kdbx->_has_implicit_root;
-    my $entry_obj = $self->kdbx->add_entry($entry_info, parent => $parent);
+    my $entry_obj = $self->kdbx->add_entry($entry_info, group => $parent);
     return $self->_tie({}, 'Entry', $entry_obj);
 }
 
