@@ -4,7 +4,7 @@ File::KeePass::KDBX - Read and write KDBX files (using the File::KDBX backend)
 
 # VERSION
 
-version 0.901
+version 0.902
 
 # SYNOPSIS
 

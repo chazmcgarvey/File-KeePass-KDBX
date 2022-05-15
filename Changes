@@ -2,6 +2,8 @@ Revision history for File-KeePass-KDBX.
 
 {{$NEXT}}
 
+0.902     2022-05-15 12:59:08-0600
+
   * Fixed parse_db "Could not open buffer" error on perls <= 5.12.
 
 0.901     2022-05-01 13:02:28-0600
