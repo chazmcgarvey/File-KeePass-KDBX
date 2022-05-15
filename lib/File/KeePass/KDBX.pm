@@ -215,7 +215,7 @@ sub parse_db {
 
     my $ref = ref $buf ? $buf : \$buf;
 
-    open(my $fh, '<:raw', $ref) or die "Could not open buffer: $!\n";
+    open(my $fh, '<', $ref) or die "Could not open buffer: $!\n";
     $self->_load($fh, $pass, $args);
 }
 
